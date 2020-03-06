@@ -1,14 +1,7 @@
-import { Router, Request, Response } from "express";
-import IRouter from "./InterfaceRouter";
+import { Request, Response } from "express";
+import BaseRouter from "./baseRouter";
 
-class AuthRouter implements IRouter {
-  public router: Router;
-
-  constructor() {
-    this.router = Router();
-    this.routes();
-  }
-
+class AuthRouter extends BaseRouter {
   routes(): void {
     this.router.get("/", (req: Request, res: Response) => {
       res.send("Hello auth router");

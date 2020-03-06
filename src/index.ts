@@ -1,5 +1,5 @@
 import path from "path";
-import express, { Application, Request, Response } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -8,24 +8,29 @@ import morgan from "morgan";
 import AuthRoutes from "./routes/authRouter";
 import TodosRoutes from "./routes/todosRouter";
 
+// common
+import HttpException from "./utils/HttpException";
+import GlobalError from "./middleware/globalError";
+
 class App {
   public app: Application;
   public port: number;
 
   constructor(port: number) {
     this.app = express();
+    this.port = port;
     this.plugins();
     this.routes();
-    this.port = port;
+    this.Handler404();
+    this.HandlerError();
   }
 
   protected plugins(): void {
     this.app.use(cors());
     this.app.use(helmet());
     this.app.use(morgan("dev"));
-    this.assets();
     this.app.use(express.json());
-    console.log(path.join(__dirname, "../public"));
+    this.assets();
   }
 
   protected routes(): void {
@@ -37,7 +42,17 @@ class App {
     this.app.use("/todos", TodosRoutes);
   }
 
-  public assets(): void {
+  protected Handler404(): void {
+    this.app.all("*", (req: Request, res: Response, next: NextFunction) => {
+      next(new HttpException("Page not Found", 404));
+    });
+  }
+
+  protected HandlerError(): void {
+    this.app.use(GlobalError);
+  }
+
+  protected assets(): void {
     this.app.use(express.static(path.join(__dirname, "../public")));
   }
 
@@ -46,10 +61,10 @@ class App {
   }
 
   public listen(): void {
-    this.app.listen(this.port, () => console.log(`App running on ${this.port}`));
+    this.app.listen(this.port, () => {
+      console.log(`App running on ${this.port} on Mode ${process.env.NODE_ENV}`);
+    });
   }
 }
 
-const app = new App(8000);
-
-app.listen();
+export default App;
